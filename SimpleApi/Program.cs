@@ -1,19 +1,34 @@
-using System.Reflection;
-using SimpleApi.Request;
-using SimpleApi.Response;
-using Swashbuckle.AspNetCore.Annotations;
+using Asp.Versioning;
+using Microsoft.AspNetCore.OpenApi;
+using Scalar.AspNetCore;
+using SimpleApi.Endpoints;
+using SimpleApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
 
-builder.Services.AddSwaggerGen(options => {
-    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+var delegateYamlTransformation = void (OpenApiOptions options) => options.AddSimpleYamlTransformation();
+
+builder.Services.AddOpenApi("v1", delegateYamlTransformation);
+builder.Services.AddOpenApi("v2", delegateYamlTransformation);
+builder.Services.AddControllers();
+
+
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(2, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+})
+.AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+    options.DefaultApiVersion = new ApiVersion(2, 0);
 });
-
 
 var app = builder.Build();
 
@@ -21,34 +36,20 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "v1"));
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "v1");
+        options.SwaggerEndpoint("/openapi/v2.json", "v2");
+    });
+    app.MapScalarApiReference(options =>
+    {
+        options
+            .AddDocument("v1", "API Version 1.0", "/openapi/v1.json")
+            .AddDocument("v2", "API Version 2.0", "/openapi/v2.json", isDefault:true); 
+    });
 }
 
 app.UseHttpsRedirection();
-
-
-app.MapGet("/api/todos", () =>
-    {
-
-    })
-    .Produces<IEnumerable<TodoResponse>>()
-    .Produces<BusinessError>(StatusCodes.Status409Conflict)
-    .Produces(StatusCodes.Status500InternalServerError)
-    .WithSummary("Get Todos")
-    .WithMetadata(new SwaggerResponseAttribute(409, "Conflicto de negocio. Posibles códigos:\n- `USER_EXISTS`: El correo ya está registrado.\n- `ROLE_REQUIRED`: El usuario debe tener un rol asignado.", typeof(BusinessError)))
-    .WithDescription( """
-                      Errores de validación posibles:  
-                      - **USER_EXISTS**: El usuario ya está en la base de datos.  
-                      - **INVALID_EMAIL**: El formato del correo no es válido.
-
-                      *Nota: Verifique los campos antes de reintentar.*
-                      """);
-
-app.MapPost("/api/todos", (TodoRequest todoRequest) =>
-    {
-        
-    })
-    .Produces<TodoResponse>()
-    .WithSummary("Add Todos");
+app.UseTodoEndpoints();
 
 app.Run();

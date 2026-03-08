@@ -1,0 +1,37 @@
+﻿info:
+  title: "API de ejemplo"
+  version: "2.0"
+  description: |
+    ## Bienvenido a la API de ejemplo
+    
+    ### Reglas de Oro:
+    - Usar HTTPS siempre.
+    - Los errores 409 devuelven un `BusinessError`.
+    - El código 500 es para excepciones no controladas
+    - El código 423 es para bloqueo por rate limit
+    
+    Disfruta la documentación.
+  summary: |
+    Ejemplo simple de una API Docs
+  contact: 
+    email: "test@hotmail.com"
+    name: "My Chemical Romance Team"
+    
+operations:
+  getTodos:
+    summary: "Get Todos"
+  getTodoById:
+    summary: "Get Todo by ID"
+    not_found_404: "Todo not found"
+  getTodoByCode:
+    summary: "Get Todo by Code"
+    not_found_404: "Todo not found"
+  addTodo:
+    summary: "Add Todo"
+    conflict_409: |
+      Errores de validación de negocio posibles:  
+      - **USER_EXISTS**: El usuario ya está en la base de datos.
+      - **INVALID_EMAIL**: El formato del correo no es válido.
+    bad_request_400: |
+      Errores de validación de entrada  
+      
