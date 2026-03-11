@@ -15,7 +15,6 @@ builder.Services.AddOpenApi("v1", delegateYamlTransformation);
 builder.Services.AddOpenApi("v2", delegateYamlTransformation);
 builder.Services.AddControllers();
 
-
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(2, 0);
@@ -38,8 +37,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/openapi/v1.json", "v1");
         options.SwaggerEndpoint("/openapi/v2.json", "v2");
+        options.SwaggerEndpoint("/openapi/v1.json", "v1");
     });
     app.MapScalarApiReference(options =>
     {
