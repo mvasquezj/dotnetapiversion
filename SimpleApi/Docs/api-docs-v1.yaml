@@ -1,6 +1,6 @@
 ﻿info:
   title: "API de ejemplo"
-  version: "2.0"
+  version: "1.0"
   description: |
     ## Bienvenido a la API de ejemplo
     
@@ -22,9 +22,6 @@ operations:
     summary: "Get Todos"
   getTodoById:
     summary: "Get Todo by ID"
-    not_found_404: "Todo not found"
-  getTodoByCode:
-    summary: "Get Todo by Code"
     not_found_404: "Todo not found"
   addTodo:
     summary: "Add Todo"

@@ -9,10 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
-var delegateYamlTransformation = void (OpenApiOptions options) => options.AddSimpleYamlTransformation();
-
-builder.Services.AddOpenApi("v1", delegateYamlTransformation);
-builder.Services.AddOpenApi("v2", delegateYamlTransformation);
 builder.Services.AddControllers();
 
 builder.Services.AddApiVersioning(options =>
@@ -28,6 +24,10 @@ builder.Services.AddApiVersioning(options =>
     options.SubstituteApiVersionInUrl = true;
     options.DefaultApiVersion = new ApiVersion(2, 0);
 });
+
+var delegateYamlTransformation = void (OpenApiOptions options) => options.AddSimpleYamlTransformation();
+builder.Services.AddOpenApi("v1", delegateYamlTransformation);
+builder.Services.AddOpenApi("v2", delegateYamlTransformation);
 
 var app = builder.Build();
 

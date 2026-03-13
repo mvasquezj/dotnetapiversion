@@ -18,7 +18,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Docs\api-docs.yaml">
+      <None Update="Docs\api-docs-v2.yaml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Docs\api-docs-v1.yaml">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

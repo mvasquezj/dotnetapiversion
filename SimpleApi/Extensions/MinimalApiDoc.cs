@@ -15,20 +15,26 @@ public static class MinimalApiDoc
     /// <summary>
     /// Config as dictionary
     /// </summary>
-    private static Dictionary<string, dynamic>? _inMemoryDoc;
+    private static Dictionary<string, Dictionary<string, dynamic>?> _inMemoryDoc = new ();
     
     
     /// <summary>
     /// Init method
     /// </summary>
-    private static void InitConfig()
+    private static Dictionary<string, dynamic>? GetVersionDoc(OpenApiOptions options)
     {
-        var yamlContent = File.ReadAllText($@"Docs/api-docs.yaml");
+        if (_inMemoryDoc.TryGetValue(options.DocumentName, out var versionConfig)) return versionConfig;
+        
+        var yamlContent = File.ReadAllText($@"Docs/api-docs-{options.DocumentName}.yaml");
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
+            
+        versionConfig = deserializer.Deserialize<Dictionary<string, dynamic>>(yamlContent);
 
-        _inMemoryDoc ??= deserializer.Deserialize<Dictionary<string, dynamic>>(yamlContent);
+        _inMemoryDoc.Add(options.DocumentName, versionConfig);
+
+        return versionConfig;
     }
 
     /// <summary>
@@ -38,42 +44,42 @@ public static class MinimalApiDoc
     /// <returns></returns>
     public static OpenApiOptions AddSimpleYamlTransformation(this OpenApiOptions options)
     {
-        InitConfig();
+        var versionDoc =  GetVersionDoc(options);
         
         options.AddDocumentTransformer((document, _, cancellationToken) =>
         {
             cancellationToken.ThrowIfCancellationRequested();
                 
-            document.Info.Title = _inMemoryDoc!["info"]["title"];
-            document.Info.Description = _inMemoryDoc["info"]["description"];
+            document.Info.Title = versionDoc!["info"]["title"];
+            document.Info.Description = versionDoc["info"]["description"];
 
-            var infoConfig = (IDictionary<object, object>) _inMemoryDoc["info"];
+            var infoConfig = (IDictionary<object, object>) versionDoc["info"];
             
-            if(infoConfig.ContainsKey("contact"))
+            if(versionDoc.ContainsKey("contact"))
                 document.Info.Contact = new OpenApiContact()
                 {
-                    Email = _inMemoryDoc["info"]["contact"]["email"],
-                    Name =  _inMemoryDoc["info"]["contact"]["name"]
+                    Email = versionDoc["info"]["contact"]["email"],
+                    Name =  versionDoc["info"]["contact"]["name"]
                 };
             
             if(infoConfig.ContainsKey("version"))
-                document.Info.Version = _inMemoryDoc["info"]["version"];
+                document.Info.Version = versionDoc["info"]["version"];
             
             if(infoConfig.ContainsKey("summary"))
-                document.Info.Summary = _inMemoryDoc["info"]["summary"];
+                document.Info.Summary = versionDoc["info"]["summary"];
             
             if(infoConfig.ContainsKey("termsOfService"))
-                document.Info.TermsOfService = _inMemoryDoc["info"]["termsOfService"];
+                document.Info.TermsOfService = versionDoc["info"]["termsOfService"];
             
             return Task.CompletedTask;
         });
 
         options.AddOperationTransformer(async (operation, context, cancellationToken) =>
         {
-            var operations = (IDictionary<object, object>)_inMemoryDoc!["operations"];
+            var operations = (IDictionary<object, object>) versionDoc!["operations"];
             if (operation.OperationId == null || !operations.ContainsKey(operation.OperationId!)) return;
             
-            var operationConfig = (IDictionary<object, object>) _inMemoryDoc["operations"][operation.OperationId!];
+            var operationConfig = (IDictionary<object, object>) versionDoc["operations"][operation.OperationId!];
             
             operation.Summary = operationConfig["summary"].ToString()!;
             
